@@ -28,15 +28,15 @@ Black-Scholes generative model for inferring volatility from option prices.
     
     # Generate option prices from the model
     predicted_prices = Vector{Float64}(undef, num_observations)
-    for i in 1:num_observations
-        predicted_prices[i] = bs_call_price(S, K[i], T[i], r, σ)
+     for i in 1:num_observations
+        @trace(normal(predicted_prices[i], obs_noise), (:obs, i))
     end
     
     # Likelihood: observed prices given predicted prices
-    for i in 1:num_observations
-        observed_call_prices[i] ~ normal(predicted_prices[i], obs_noise)
+    observations = choicemap()
+    for i in 1:length(observed_prices)
+        observations[(:obs, i)] = observed_prices[i]
     end
-    
     return (σ, obs_noise)
 end
 
