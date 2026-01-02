@@ -25,7 +25,8 @@ println("="^90)
 
 include("black_scholes_model.jl")
 using .BlackScholesModel
-
+import .BlackScholesModel: bs_likelihood, bs_call_price, bs_put_price
+import .MertonJumpDiffusionModel: simulate_merton_paths, merton_likelihood
 S0 = 100.0
 r = 0.05
 true_σ = 0.25
