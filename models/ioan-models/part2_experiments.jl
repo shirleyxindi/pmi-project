@@ -14,7 +14,7 @@ Random.seed!(123)
 
 include("black_scholes_model.jl")
 using .BlackScholesModel
-
+import .BlackScholesModel: bs_call_price
 println("="^90)
 println("PART II: INFERENCE METHOD COMPARISON")
 println("="^90)
@@ -77,7 +77,7 @@ println("  Option prices:             $(length(K)) calls at various strikes/matu
 # Generate synthetic observed prices
 observed_prices = Float64[]
 for i in 1:length(K)
-    price = bs_call_price(S0, K[i], T[i], r, true_σ)
+    price = BlackScholesModel.bs_call_price(S0, K[i], T[i], r, true_σ)
     noise = true_obs_noise * price * randn()
     obs = price + noise
     obs = max(obs, 0.1)
@@ -116,7 +116,7 @@ function run_mh_inference(n_samples::Int)
         
         ll = 0.0
         for i in 1:length(observed_prices)
-            pred = bs_call_price(S0, K[i], T[i], r, σ)
+            pred = BlackScholesModel.bs_call_price(S0, K[i], T[i], r, σ)
             ll += logpdf(Normal(pred, noise * pred), observed_prices[i])
         end
         return ll
@@ -192,7 +192,7 @@ function run_is_inference(n_samples::Int)
     for σ_try in σ_grid
         ll = 0.0
         for i in 1:length(observed_prices)
-            pred = bs_call_price(S0, K[i], T[i], r, σ_try)
+            pred = BlackScholesModel.bs_call_price(S0, K[i], T[i], r, σ_try)
             ll += logpdf(Normal(pred, true_obs_noise * pred), observed_prices[i])
         end
         if ll > best_ll
@@ -212,7 +212,7 @@ function run_is_inference(n_samples::Int)
         if σ > 0.05 && σ < 0.8
             ll = 0.0
             for j in 1:length(observed_prices)
-                pred = bs_call_price(S0, K[j], T[j], r, σ)
+                pred = BlackScholesModel.bs_call_price(S0, K[j], T[j], r, σ)
                 ll += logpdf(Normal(pred, true_obs_noise * pred), observed_prices[j])
             end
             
@@ -551,7 +551,7 @@ println("  obs_noise = $(true_obs_noise)")
 println("  T       = $(T_total), steps = $(num_steps)")
 
 # Generate true latent prices
-true_prices, _, _ = simulate_merton_paths(S0, true_μ, true_σ, true_λ, true_μ_J, true_σ_J, T_total, num_steps)
+true_prices, _, _ = MertonJumpDiffusionModel.simulate_merton_paths(S0, true_μ, true_σ, true_λ, true_μ_J, true_σ_J, T_total, num_steps)
 
 # Add observation noise in log-return space (matches likelihood’s use of observation_noise)
 function add_noise_to_returns(prices::Vector{Float64}, obs_noise::Float64)
@@ -602,7 +602,7 @@ function log_posterior(state::Vector{Float64})
         return -Inf
     end
 
-    ll = merton_likelihood(observed_prices, S0, T_total, r, μ_fixed, σ, λ, μJ, σJ, noise, num_steps)
+    ll = MertonJumpDiffusionModel.merton_likelihood(observed_prices, S0, T_total, r, μ_fixed, σ, λ, μJ, σJ, noise, num_steps)
     if !isfinite(ll)
         return -Inf
     end
